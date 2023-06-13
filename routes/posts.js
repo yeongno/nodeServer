@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const moment = require('moment');
 
 const { Post } = require("../models/Post");
 
@@ -16,8 +17,82 @@ const { Post } = require("../models/Post");
 // });
 
 router.post("/getPost", (req, res) => {
+  if(req.body.topic=="whole"){
+    const endDate1='2021-06-30';
+    const startDate1='2021-06-01';
+    const startDate = moment(startDate1).startOf('day');
+  const endDate = moment(endDate1).endOf('day');
+  const request = {
+    topic: 'your_topic',
+    class: 'your_class',
+    startDate: '2023-06-01',
+    endDate: '2023-06-30'
+  };
+  Post.aggregate([
+    {
+      $match: {
+        $and: [
+          // { topic: req.body.topic },
+          { class: req.body.class },
+          // { createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() } }
+        ]
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        content: 1,
+        createdAt: 1,
+        topic:1
+      }
+    },
+    {
+      $sort: {
+        createdAt: 1
+      }
+    }
+  ]).exec((err, posts) => {
+    if (err) return res.status(400).send(err);
+    return res.status(200).json({ success: true, posts });
+  });
+  }
+  else{
   Post.find({
      topic: req.body.topic,class: req.body.class }).exec((err, posts) => {
+    if (err) return res.status(400).send(err);
+    return res.status(200).json({ success: true, posts });
+  });
+}
+});
+router.post('/getPostWhole', (req, res) => {
+  const startDate = moment(req.body.startDate).startOf('day');
+  const endDate = moment(req.body.endDate).endOf('day');
+
+  Post.aggregate([
+    {
+      $match: {
+        $and: [
+          { topic: req.body.topic },
+          { class: req.body.class },
+          { createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() } }
+        ]
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        content: 1,
+        createdAt: 1
+      }
+    },
+    {
+      $sort: {
+        createdAt: 1
+      }
+    }
+  ]).exec((err, posts) => {
     if (err) return res.status(400).send(err);
     return res.status(200).json({ success: true, posts });
   });
